@@ -234,9 +234,10 @@ fn client_owned_sidebar_dividers_resize_live() {
         .map(|cell| cell.symbol.as_str())
         .collect();
     assert!(
-        waiting_text.contains(" spaces"),
+        waiting_text.contains(" spaces 1"),
         "local sidebar must keep spaces while resizing: {waiting_text}"
     );
+    assert!(!waiting_text.contains(" spaces1"));
     assert!(!waiting_text.contains(" machines"));
     assert!(!waiting_text.contains("Select a connected machine"));
     assert!(!waiting_text.contains("LIVE"));
@@ -273,7 +274,7 @@ fn client_owned_sidebar_dividers_resize_live() {
         .iter()
         .map(|cell| cell.symbol.as_str())
         .collect();
-    assert!(recovered_text.contains(" spaces"));
+    assert!(recovered_text.contains(" spaces 1"));
     assert!(recovered_text.contains("LIVE"));
     assert!(!state.hits.panes.is_empty());
     let section_divider = state.hits.sidebar_section_divider;

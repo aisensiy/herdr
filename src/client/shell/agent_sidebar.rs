@@ -57,17 +57,17 @@ pub(super) fn render_agent_panel(
     agent_scroll: &mut usize,
     hits: &mut ShellHitMap,
 ) {
+    let rows = agent_rows(snapshot, config, None);
     if !render_agent_panel_header(
         buffer,
         area,
         snapshot.agent_view_label.as_deref(),
         config,
         hits,
+        rows.len(),
     ) {
         return;
     }
-
-    let rows = agent_rows(snapshot, config, None);
     render_agent_list(
         buffer,
         area,
@@ -93,6 +93,7 @@ pub(super) fn render_agent_panel_header(
     agent_view_label: Option<&str>,
     config: &ClientShellConfig,
     hits: &mut ShellHitMap,
+    count: usize,
 ) -> bool {
     if area.height == 0 {
         return false;
@@ -117,6 +118,15 @@ pub(super) fn render_agent_panel_header(
         Style::default()
             .fg(config.palette.overlay0)
             .add_modifier(Modifier::BOLD),
+    );
+    let agent_count = count.to_string();
+    put_text(
+        buffer,
+        area.x.saturating_add(8),
+        area.y + 1,
+        area.width.saturating_sub(8),
+        &agent_count,
+        Style::default().fg(config.palette.overlay0),
     );
     let sort_label = agent_view_label.unwrap_or(match config.agent_panel_sort {
         crate::config::AgentPanelSortConfig::Spaces => "grouped",

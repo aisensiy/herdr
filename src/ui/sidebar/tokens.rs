@@ -21,6 +21,7 @@ pub(crate) enum ResolvedTokenKind {
     TerminalTitle(String),
     Branch(String),
     GitStatus { ahead: usize, behind: usize },
+    TabCount(usize),
     Custom(String),
 }
 
@@ -36,7 +37,7 @@ impl ResolvedTokenKind {
             | Self::TerminalTitle(value)
             | Self::Branch(value)
             | Self::Custom(value) => Some(value),
-            Self::StateIcon | Self::GitStatus { .. } => None,
+            Self::StateIcon | Self::GitStatus { .. } | Self::TabCount(_) => None,
         }
     }
 }
@@ -126,6 +127,7 @@ pub(crate) struct SpaceTokenContext<'a> {
     pub(crate) branch: Option<&'a str>,
     pub(crate) state_text: &'a str,
     pub(crate) ahead_behind: Option<(usize, usize)>,
+    pub(crate) tab_count: usize,
     pub(crate) tokens: &'a std::collections::HashMap<String, String>,
     pub(crate) suppress_git_details: bool,
 }
@@ -159,6 +161,10 @@ pub(crate) fn space_rows(
                             .filter(|(ahead, behind)| *ahead > 0 || *behind > 0)
                             .map(|(ahead, behind)| ResolvedTokenKind::GitStatus { ahead, behind }),
                         SpaceSidebarToken::GitStatus => None,
+                        SpaceSidebarToken::TabCount if context.tab_count > 1 => {
+                            Some(ResolvedTokenKind::TabCount(context.tab_count))
+                        }
+                        SpaceSidebarToken::TabCount => None,
                         SpaceSidebarToken::Custom(name) => context
                             .tokens
                             .get(name)
@@ -179,7 +185,10 @@ pub(crate) fn space_rows(
 
 pub(crate) fn separator(previous: &ResolvedToken, current: &ResolvedToken) -> &'static str {
     if matches!(previous.kind, ResolvedTokenKind::StateIcon)
-        || matches!(current.kind, ResolvedTokenKind::GitStatus { .. })
+        || matches!(
+            current.kind,
+            ResolvedTokenKind::GitStatus { .. } | ResolvedTokenKind::TabCount(_)
+        )
     {
         " "
     } else {
@@ -326,6 +335,7 @@ rows = [[{ token = "$load", rules = [{ lt = 50, dim = true }] }]]
             let spaces = space_rows(
                 &config.spaces,
                 SpaceTokenContext {
+                    tab_count: 0,
                     workspace: "repo",
                     branch: None,
                     state_text: "working",
@@ -375,6 +385,7 @@ rows = [[{ token = "$load", rules = [{ lt = 50, hide = true }] }], ["workspace"]
             let rows = space_rows(
                 &config.spaces,
                 SpaceTokenContext {
+                    tab_count: 0,
                     workspace: "repo",
                     branch: None,
                     state_text: "working",
@@ -544,6 +555,7 @@ rows = [[{ token = "$load", rules = [{ lt = 50, hide = true }] }], ["workspace"]
             space_rows(
                 &config,
                 SpaceTokenContext {
+                    tab_count: 0,
                     workspace: "feature",
                     branch: Some("worktree/feature"),
                     state_text: "idle",
@@ -571,6 +583,7 @@ rows = [[{ token = "$load", rules = [{ lt = 50, hide = true }] }], ["workspace"]
             space_rows(
                 &config,
                 SpaceTokenContext {
+                    tab_count: 0,
                     workspace: "repo",
                     branch: None,
                     state_text: "idle",
@@ -582,6 +595,43 @@ rows = [[{ token = "$load", rules = [{ lt = 50, hide = true }] }], ["workspace"]
             vec![vec![ResolvedToken::unstyled(ResolvedTokenKind::Custom(
                 "2 changes".into()
             ))]]
+        );
+    }
+    #[test]
+    fn tab_count_hides_until_space_has_multiple_tabs() {
+        let config = SpacesSidebarConfig::default();
+        let tokens = std::collections::HashMap::new();
+        let context = |tab_count| SpaceTokenContext {
+            tab_count,
+            workspace: "repo",
+            branch: None,
+            state_text: "idle",
+            ahead_behind: None,
+            tokens: &tokens,
+            suppress_git_details: false,
+        };
+
+        assert_eq!(
+            space_rows(&config, context(1)),
+            vec![vec![
+                ResolvedToken::unstyled(ResolvedTokenKind::StateIcon),
+                ResolvedToken::unstyled(ResolvedTokenKind::Workspace("repo".into())),
+            ]]
+        );
+        assert_eq!(
+            space_rows(&config, context(3)),
+            vec![vec![
+                ResolvedToken::unstyled(ResolvedTokenKind::StateIcon),
+                ResolvedToken::unstyled(ResolvedTokenKind::Workspace("repo".into())),
+                ResolvedToken::unstyled(ResolvedTokenKind::TabCount(3)),
+            ]]
+        );
+        assert_eq!(
+            separator(
+                &ResolvedToken::unstyled(ResolvedTokenKind::Workspace("repo".into())),
+                &ResolvedToken::unstyled(ResolvedTokenKind::TabCount(3)),
+            ),
+            " "
         );
     }
 }

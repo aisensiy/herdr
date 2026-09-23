@@ -365,7 +365,7 @@ rows = [
 [ui.sidebar.spaces]
 row_gap = 0
 rows = [
-  ["state_icon", "workspace"],
+  ["state_icon", "workspace", "tab_count"],
   ["branch", "git_status"],
 ]
 ```
@@ -390,9 +390,10 @@ Space rows accept these built-in tokens:
 - `workspace` — workspace name.
 - `branch` — Git branch when available.
 - `git_status` — Git ahead and behind counts when nonzero.
+- `tab_count` — number of tabs in the space, shown only when the space has more than one tab.
 - `$name` — custom workspace metadata named `name`.
 
-Tokens render in their configured order. Herdr normally separates adjacent values with ` · ` and uses a single space after `state_icon`. Missing values and their separators disappear; a row disappears when none of its tokens have a value. Existing custom rows remain unchanged, so add `machine` explicitly if you want machine identity in a custom multi-machine layout. Each layout may contain at most 16 rows, with at most 16 tokens in each row.
+Tokens render in their configured order. Herdr normally separates adjacent values with ` · ` and uses a single space after `state_icon`. Missing values and their separators disappear; a row disappears when none of its tokens have a value. Existing custom rows remain unchanged, so add `machine` explicitly if you want machine identity in a custom multi-machine layout. The `spaces` and `agents` headers show the total number of spaces and agents. Existing custom Space rows remain unchanged, so add `tab_count` explicitly if you want tab counts in a custom layout. Each layout may contain at most 16 rows, with at most 16 tokens in each row.
 
 A token entry can also be an inline style table:
 

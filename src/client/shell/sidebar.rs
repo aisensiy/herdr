@@ -225,6 +225,15 @@ pub(crate) fn render_sidebar(
             .fg(palette.overlay0)
             .add_modifier(Modifier::BOLD),
     );
+    let spaces_count = snapshot.workspaces.len().to_string();
+    put_text(
+        buffer,
+        workspace_area.x.saturating_add(8),
+        workspace_area.y,
+        workspace_area.width.saturating_sub(8),
+        &spaces_count,
+        Style::default().fg(palette.overlay0),
+    );
 
     let entries = workspace_entries(snapshot, state.collapsed_groups);
     let body = Rect::new(
@@ -244,6 +253,7 @@ pub(crate) fn render_sidebar(
                 .get(entry.index)
                 .map(|workspace| {
                     workspace_rows(
+                        snapshot,
                         workspace,
                         displayed_workspace_status(snapshot, workspace, state.collapsed_groups),
                         entry.indented,
@@ -304,7 +314,7 @@ pub(crate) fn render_sidebar(
             continue;
         };
         let status = displayed_workspace_status(snapshot, workspace, state.collapsed_groups);
-        let rows = workspace_rows(workspace, status, entry.indented, &config.spaces);
+        let rows = workspace_rows(snapshot, workspace, status, entry.indented, &config.spaces);
         let row_height = (rows.len().max(1).min(u16::MAX as usize) as u16).min(body.height);
         if y.saturating_add(row_height) > body.bottom() {
             break;
@@ -624,6 +634,7 @@ pub(in crate::client::shell) fn displayed_workspace_status(
 }
 
 pub(in crate::client::shell) fn workspace_rows(
+    snapshot: &ClientShellSnapshot,
     workspace: &ClientShellWorkspace,
     status: crate::api::schema::AgentStatus,
     indented: bool,
@@ -639,6 +650,11 @@ pub(in crate::client::shell) fn workspace_rows(
         &workspace.label
     };
     let token_values = workspace.tokens.iter().cloned().collect::<HashMap<_, _>>();
+    let tab_count = snapshot
+        .tabs
+        .iter()
+        .filter(|tab| tab.workspace_id == workspace.workspace_id)
+        .count();
     crate::ui::sidebar_space_rows(
         config,
         crate::ui::SpaceTokenContext {
@@ -647,6 +663,7 @@ pub(in crate::client::shell) fn workspace_rows(
             state_text: status_text(status),
             ahead_behind: workspace.git_ahead_behind,
             tokens: &token_values,
+            tab_count,
             suppress_git_details: indented,
         },
     )

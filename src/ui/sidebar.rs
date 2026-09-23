@@ -122,6 +122,7 @@ pub(crate) fn resolved_token_spans(
                     + usize::from(*behind > 0) * display_width(&format!("↓{behind}"))
                     + usize::from(*ahead > 0 && *behind > 0)
             }
+            ResolvedTokenKind::TabCount(count) => display_width(&count.to_string()),
             _ => 0,
         })
         .collect::<Vec<_>>();
@@ -263,6 +264,10 @@ pub(crate) fn resolved_token_spans(
                     ));
                 }
             }
+            ResolvedTokenKind::TabCount(count) => spans.push(Span::styled(
+                count.to_string(),
+                apply_token_style(secondary_style, token.style),
+            )),
             ResolvedTokenKind::TerminalTitle(text) | ResolvedTokenKind::Custom(text) => {
                 spans.push(Span::styled(
                     truncate_end(text, budgets[index]),
